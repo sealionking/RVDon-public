@@ -1,0 +1,22 @@
+# Build artifacts
+*.o
+*.so
+*.a
+*.elf
+*.vxbin
+*.dump
+basic_usage
+compare
+*.obj_dir/
+
+# Test generated files
+c_result_*.csv
+golden_*.csv
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
