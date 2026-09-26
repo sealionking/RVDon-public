@@ -227,9 +227,39 @@ For reference, our internal verification yielded:
 
 Total: 384/384 elements passed all checks.
 
+Third-party verification (DeepSeek, 2026-09-26) independently confirmed
+6/6 claims PASS with bit-exact Kahan match. Extended validation (46 tests,
+5152 elements) also passed.
+
 ---
 
-## 7. Intellectual Property Statement
+## 7. Known Verification Gaps
+
+The following areas are validated internally but not covered by this
+cross-validation data:
+
+| Area | Status | Plan |
+|------|:---:|------|
+| Multi-CTA correctness | Not in v1.0 (P3-1) | v1.1 |
+| FA_SOFTMAX backpressure | Not in v1.0 (P3-3) | v1.1 |
+| Dual-core (NUM_CORES=2) | SimX PASS, rtlsim pending | Q4 2026 |
+| Timing closure (28nm) | Internal only | Report Q4 2026 |
+| Power/area | Internal only | Report Q4 2026 |
+
+### 7.1 Boundary Value Vectors
+
+`kahan_golden_vectors_boundary.csv` covers edge cases:
+
+| Tile | Pattern | Description |
+|:---:|:---|------|
+| 9 | denormal | FP32 subnormal inputs |
+| 10 | zero | All-zero matrices |
+| 11 | large | Large values (~1e4 scale) |
+| 12 | sparse | 5% nonzero density |
+
+---
+
+## 8. Intellectual Property Statement
 
 - **Distributed**: Input matrices, golden vectors, this guide, and the
   rvdon-kahan library (open-source, separately licensed)
@@ -252,3 +282,27 @@ The mask definitions (triangle/causal) are standard mathematical concepts.
 3. Vaswani, A. et al. (2017). "Attention Is All You Need." *NeurIPS*.
    (Causal mask in attention mechanism)
 4. rvdon-kahan public API: `rvdon_kahan.h` (distributed separately)
+
+
+## 9. FAQ
+
+**Q: Why is Kahan vs Naive divergence so small in the K=16 data?**
+A: K=16 is a smoke test. FP32 errors accumulate with K, so to see
+Kahan benefit you should use the K=128 or K=256 extended vectors
+(`kahan_golden_vectors_extended.csv`).
+
+**Q: Can I use FP64 (double) for my reference implementation?**
+A: Yes, but expect ~2.4e-7 differences vs CSV kahan_ref (computed in
+FP32 / float). This is expected and not an error.
+
+**Q: How do I verify the rtl_output column is genuine?**
+A: See section 2.4 (Golden Vector Provenance) for the commit hash and
+simulation recipe. You can reproduce the simulation if you have access
+to the Vortex RTL (not distributed here). The SHA256SUMS file provides
+file integrity verification.
+
+**Q: What about the extended and boundary vectors?**
+A: Extended vectors (K=128/256) do not contain rtl_output because they
+were generated with Python FP32 emulation. They demonstrate Kahan vs
+Naive divergence at larger scales. Boundary vectors cover edge cases
+(denormals, zeros, large values, sparse matrices).
